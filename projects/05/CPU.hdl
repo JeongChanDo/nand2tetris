@@ -39,5 +39,26 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    //left Mux16
+    And(a=instruction[5], b=instruction[15], out=isOutMLoop)
+    Mux16(a=instruction, b=outMLoop, sel=isOutMLoop);
+
+    //PC PARTS
+    Or(a=instruction[0], b=instruction[1], out=jmp12or);
+    Or(a=jmp12or, b=instruction[2], out=jmp123or)
+    Not(in=reset, out=resetNotOut)
+    PC(in=aRegistorOut, load=jmp123or, inc=resetNotOut, reset=reset, out=pc);
+
+    //A registor PARRTS
+    Not(in=instruction[15], out=opcodeOut); // A instruction == store to A registor
+    And(a=instruction[15], b=instruction[5], out=loadA); //if instruction is C and dest is a, store outM to A registor
+    Or(a=opcodeOut, b=loadA, out=aRegistorLoad);
+    //if opcode is 0 (== A instruction) -> opcodeOut = 1 -> load = 1
+    Register(in=leftMuxOut, load=aRegistorLoad, out=aRegistorOut);
+
+    //D registor PARTS
+    And(a=instruction[15], b=instruction[4], out=loadD); //if instruction is C and dest is d, store outM to A registor
+    Register(in=outMLoop, load=loadD, out=dRegistorOut);
+
+
 }
