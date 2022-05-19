@@ -44,16 +44,37 @@ CHIP CPU {
     //PC PARTS
     Or(a=instruction[0], b=instruction[1], out=jmp12or);
     Or(a=jmp12or, b=instruction[2], out=jmp123or);
-    And(a=instruction[15], b=jmp123or, out=existCandJ);//c instruction and jmp
+    And(a=instruction[15], b=jmp123or, out=isJump);         //c instruction and jmp
+
+
+
     // jump condition implementation * comp = outMLoop
-    // jump con 1. JGT comp > 0
-    
+    Mux(a=true, b=false, sel=true, out=noJump);                 // jump con 1. 000 no jump
+    Not(in=ng, out=isNotNegative);                              // jump con 2. 001 JGT comp > 0 jump   = not zero & not negative
+    And(a=isNotNegative, b=isNotZero, out=isPositive); 
+    Mux16(a=false, b=true, sel=isPositive, out=isJGT16);        // end JGT
+    Mux16(a=false, b=true, sel=zr, out=isJEQ16);                // jump con 3. 010 JEQ
+    Or16(a=isJGT16, b=isJEQ16, out=isJGE16);                    // jump con 4. 011 JGE, comp >= zero, jump
+    Mux16(a=false, b=true, sel=ng, out=isJLT16);                // jump con 5. 100 JLT 
+    Not(in=zr, out=isNotZero);                                  // jump con 6. 101 JNE, comp != zero, jump
+    Mux16(a=false, b=true, sel=isNotZero, out=isJNE16);         // end JNE
+    Or16(a=isJLT16, b=isJEQ16, out=isJLE16);                    // jump con 7. 110 JLE
+    Mux16(a=false, b=true, sel=true, out=jump16);               // jump con 8. 111 JMP, always jump
+    Mux8Way16(a=false, b=isJGT16, c=isJEQ16, d=isJGE16,
+            e=isJLT16, f=isJNE16, g=isJLE16, h=jump16,
+            sel[2]=instruction[2], sel[1]=instruction[1], 
+            sel[0]=instruction[0], out[0..7]=isJump0to7, out[8..15]=isJump8to15);
+    Or8Way(in=isJump0to7, out=jumpRes1);
+    Or8Way(in=isJump8to15, out=jumpRes2);
+    Or(a=jumpRes1, b=jumpRes2, out=isJumpCondition);
+    And(a=isJump, b= isJumpCondition, out=isPCLoad);
+
     Not(in=reset, out=isNotReset);
     PC(in=aRegistorOut, load=isPCLoad, inc=isNotReset, reset=reset, out[0..14]=pc);
 
     //A registor PARRTS
-    Not(in=instruction[15], out=opcodeOut); // A instruction == store to A registor
-    And(a=instruction[15], b=instruction[5], out=loadA); //if instruction is C and dest is a, store outM to A registor
+    Not(in=instruction[15], out=opcodeOut);                 // A instruction == store to A registor
+    And(a=instruction[15], b=instruction[5], out=loadA);    //if instruction is C and dest is a, store outM to A registor
     Or(a=opcodeOut, b=loadA, out=aRegistorLoad);
     //if opcode is 0 (== A instruction) -> opcodeOut = 1 -> load = 1
     ARegister(in=leftMuxOut, load=aRegistorLoad, out=aRegistorOut, out[0..14]=addressM);
@@ -78,7 +99,7 @@ CHIP CPU {
     And(a=instruction[15], b=instruction[8], out=ny);
     And(a=instruction[15], b=instruction[7], out=f);
     And(a=instruction[15], b=instruction[6], out=no);
-    ALU(x=dRegistorOut, y=inputMA, zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no, out=outMLoop, out=outM);
+    ALU(x=dRegistorOut, y=inputMA, zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no, out=outMLoop, out=outM, zr=zr, ng=ng);
 
     //writeM
     And(a=instruction[15], b=instruction[3], out=writeM);

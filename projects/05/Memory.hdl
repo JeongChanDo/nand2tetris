@@ -27,5 +27,15 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    //DMux part : set load bit
+    DMux(in=load, sel=address[14], a=ram16kload, b=ram8kload);
+    DMux(in=ram8kload, sel=address[13],a=ram8kload2, b=registerload);
+    RAM16K(in=in, load=ram16kload, address=address[0..13], out=ram16kOut);
+    RAM4K(in=in, load=ram8kload, address=address[0..11], out=ram4k1Out);
+    RAM4K(in=in, load=ram8kload, address=address[0..11], out=ram4k2Out);
+
+    Register(in=in, load=registerload, out=registerOut);
+
+    //Mux part : get selected register output
+
 }
