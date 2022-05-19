@@ -30,12 +30,17 @@ CHIP Memory {
     //DMux part : set load bit
     DMux(in=load, sel=address[14], a=ram16kload, b=ram8kload);
     DMux(in=ram8kload, sel=address[13],a=ram8kload2, b=registerload);
+    //ram 16k
     RAM16K(in=in, load=ram16kload, address=address[0..13], out=ram16kOut);
-    RAM4K(in=in, load=ram8kload, address=address[0..11], out=ram4k1Out);
-    RAM4K(in=in, load=ram8kload, address=address[0..11], out=ram4k2Out);
-
+    //screem memory map
+    DMux(in=ram8kload2, sel=address[12], a=ram4kload1, b=ram4kload2);
+    RAM4K(in=in, load=ram4kload1, address=address[0..11], out=ram4k1Out);
+    RAM4K(in=in, load=ram4kload2, address=address[0..11], out=ram4k2Out);
+    //keyboard memory map
     Register(in=in, load=registerload, out=registerOut);
 
     //Mux part : get selected register output
-
+    Mux16(a=ram4k1Out, b=ram4k2Out, sel=address[12], out=screenOut);
+    Mux16(a=screenOut, b=registerOut, sel=address[13], out=screenKeyboardOut);
+    Mux16(a=ram16kOut, b=screenKeyboardOut, sel=address[14], out=out);
 }
