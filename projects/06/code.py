@@ -22,8 +22,6 @@ class Code:
                 self.dest_dict[val][2] = "1"
             self.dest_dict[val] = "".join(self.dest_dict[val])
 
-        # zx nx zy ny f no, out
-
         self.comp_dict = {
             "0"     : "101010",
             "1"     : "111111",
@@ -65,5 +63,4 @@ class Code:
         return self.jump_dict[jump_cmd]
     
     def get_comp(self, comp_cmd):
-        print(self.comp_dict)
-        return "comp result"
+        return self.comp_dict[comp_cmd]
